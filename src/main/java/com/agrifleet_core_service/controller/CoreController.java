@@ -1,8 +1,10 @@
 package com.agrifleet_core_service.controller;
 
 import com.agrifleet_core_service.entity.BookingEntity;
+import com.agrifleet_core_service.entity.DepotEntity;
 import com.agrifleet_core_service.entity.VehicleEntity;
 import com.agrifleet_core_service.repository.BookingRepository;
+import com.agrifleet_core_service.repository.DepotRepository;
 import com.agrifleet_core_service.repository.VehicleRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +20,13 @@ public class CoreController {
 
     private final VehicleRepository vehicleRepository;
     private final BookingRepository bookingRepository;
+    private final DepotRepository depotRepository;
 
-    public CoreController(VehicleRepository vehicleRepository, BookingRepository bookingRepository) {
+    public CoreController(VehicleRepository vehicleRepository, BookingRepository bookingRepository,
+            DepotRepository depotRepository) {
         this.vehicleRepository = vehicleRepository;
         this.bookingRepository = bookingRepository;
+        this.depotRepository = depotRepository;
     }
 
     // ==========================================
@@ -63,6 +68,48 @@ public class CoreController {
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
         if (vehicleRepository.existsById(id)) {
             vehicleRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ==========================================
+    // DEPOT ENDPOINTS
+    // ==========================================
+
+    @GetMapping("/depots")
+    public ResponseEntity<List<DepotEntity>> getAllDepots() {
+        return ResponseEntity.ok(depotRepository.findAll());
+    }
+
+    @GetMapping("/depots/{id}")
+    public ResponseEntity<DepotEntity> getDepotById(@PathVariable Long id) {
+        Optional<DepotEntity> depot = depotRepository.findById(id);
+        return depot.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/depots")
+    public ResponseEntity<DepotEntity> createDepot(@RequestBody DepotEntity depot) {
+        DepotEntity savedDepot = depotRepository.save(depot);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedDepot);
+    }
+
+    @PutMapping("/depots/{id}")
+    public ResponseEntity<DepotEntity> updateDepot(@PathVariable Long id, @RequestBody DepotEntity updatedData) {
+        return depotRepository.findById(id).map(existing -> {
+            existing.setDepotName(updatedData.getDepotName());
+            existing.setAddress(updatedData.getAddress());
+            existing.setLatitude(updatedData.getLatitude());
+            existing.setLongitude(updatedData.getLongitude());
+            existing.setIsActive(updatedData.getIsActive());
+            return ResponseEntity.ok(depotRepository.save(existing));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/depots/{id}")
+    public ResponseEntity<Void> deleteDepot(@PathVariable Long id) {
+        if (depotRepository.existsById(id)) {
+            depotRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
